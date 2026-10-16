@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cronwrap"
+version = "1.0.0"
+description = "Wrap any cron job: run it, capture logs, and get Telegram/Discord alerts on failure or timeout. Zero dependencies."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "agenticspring" }]
+keywords = ["cron", "monitoring", "alerts", "telegram", "discord", "cli"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+]
+dependencies = []
+
+[project.scripts]
+cronwrap = "cronwrap.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["cronwrap*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
