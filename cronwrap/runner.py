@@ -158,7 +158,17 @@ def run_command(
 
     log_path: str | None = None
     if log_dir:
-        os.makedirs(log_dir, exist_ok=True)
+        try:
+            os.makedirs(log_dir, exist_ok=True)
+        except OSError as exc:
+            # A broken log dir must never mask the command's own result.
+            print(
+                f"cronwrap: warning: cannot use log dir {log_dir}: {exc} "
+                "— continuing without a log file",
+                file=sys.stderr,
+            )
+            log_dir = None
+    if log_dir:
         stamp = started.strftime("%Y%m%d-%H%M%S")
         log_path = os.path.join(log_dir, f"{slug}.{stamp}.log")
         with open(log_path, "w", encoding="utf-8") as fh:

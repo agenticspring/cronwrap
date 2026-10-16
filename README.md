@@ -112,6 +112,9 @@ Log tail:
 | `0`  | Command succeeded (dry-run also exits 0) |
 | `N`  | The command's own non-zero exit code (passed through untouched) |
 | `124` | The command was killed for exceeding `--timeout` |
+| `126` | The command exists but is not executable (permission denied) |
+| `127` | The command was not found |
+| `2`  | cronwrap usage error (bad flags, missing command, invalid `--timeout`/`--keep-logs`) |
 
 ## Limitations
 

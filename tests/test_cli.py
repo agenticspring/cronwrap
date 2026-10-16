@@ -180,5 +180,39 @@ class TestMain(unittest.TestCase):
             thread.join()
 
 
+    def test_command_not_found_clean_exit_127(self):
+        code, _, err = self.run_main(["--name", "ghost", "--", "/bin/definitely-not-here-xyz"])
+        self.assertEqual(code, 127)
+        self.assertIn("command not found", err)
+        self.assertNotIn("Traceback", err)
+
+    def test_timeout_zero_rejected(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_main(["--timeout", "0", "--", "true"])
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_timeout_negative_rejected(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_main(["--timeout", "-5", "--", "true"])
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_keep_logs_negative_rejected(self):
+        with self.assertRaises(SystemExit) as cm:
+            self.run_main(["--keep-logs", "-1", "--", "true"])
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_broken_log_dir_warns_and_still_runs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            blocker = os.path.join(tmp, "not-a-dir")
+            with open(blocker, "w") as fh:
+                fh.write("x")
+            code, _, err = self.run_main(
+                ["--name", "logless", "--log-dir", blocker, "--", "true"]
+            )
+            self.assertEqual(code, 0)  # command result preserved
+            self.assertIn("warning", err)
+            self.assertIn("continuing without a log file", err)
+
+
 if __name__ == "__main__":
     unittest.main()

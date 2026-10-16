@@ -19,6 +19,12 @@ from .runner import run_command
 #: Exit code used when the job is killed due to --timeout.
 TIMEOUT_EXIT_CODE = 124
 
+#: Exit code when the command binary cannot be found (shell convention).
+NOT_FOUND_EXIT_CODE = 127
+
+#: Exit code when the command binary cannot be executed (shell convention).
+NOT_EXECUTABLE_EXIT_CODE = 126
+
 
 def _env(name: str) -> str | None:
     value = os.environ.get(name)
@@ -108,6 +114,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     command = _strip_leading_dashdash(list(args.command))
 
+    if args.timeout is not None and args.timeout <= 0:
+        parser.error("--timeout must be a positive number of seconds")
+    if args.keep_logs < 0:
+        parser.error("--keep-logs must be >= 0")
+
     if args.dry_run:
         name = args.name
         print(f"[dry-run] job: {name}")
@@ -123,13 +134,23 @@ def main(argv: list[str] | None = None) -> int:
     if not command:
         parser.error("no command given (usage: cronwrap [options] -- <command> ...)")
 
-    result = run_command(
-        command,
-        name=args.name,
-        timeout=args.timeout,
-        log_dir=args.log_dir,
-        keep_logs=args.keep_logs,
-    )
+    try:
+        result = run_command(
+            command,
+            name=args.name,
+            timeout=args.timeout,
+            log_dir=args.log_dir,
+            keep_logs=args.keep_logs,
+        )
+    except FileNotFoundError:
+        print(f"cronwrap: command not found: {command[0]}", file=sys.stderr)
+        return NOT_FOUND_EXIT_CODE
+    except PermissionError:
+        print(f"cronwrap: permission denied executing: {command[0]}", file=sys.stderr)
+        return NOT_EXECUTABLE_EXIT_CODE
+    except OSError as exc:
+        print(f"cronwrap: failed to start command: {exc}", file=sys.stderr)
+        return 1
 
     report: NotifyReport | None = None
     if result.timed_out or not result.ok or args.notify_on == "always":
